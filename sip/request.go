@@ -17,14 +17,7 @@ type Request struct {
 }
 
 // NewRequest NewRequest
-func NewRequest(
-	messID MessageID,
-	method RequestMethod,
-	recipient *URI,
-	sipVersion string,
-	hdrs []Header,
-	body string,
-) *Request {
+func NewRequest(messID MessageID, method RequestMethod, recipient *URI, sipVersion string, hdrs []Header, body string) *Request {
 	req := new(Request)
 	if messID == "" {
 		req.messID = MessageID(uuid.Must(uuid.NewV4()).String())

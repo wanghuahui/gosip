@@ -16,25 +16,29 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// MODDEBUG MODDEBUG
-var MODDEBUG = "DEBUG"
-
-var sysTB = "sysinfo"
-var fileTB = "files"
+const (
+	// ModDebug ModDebug
+	ModDebug = "DEBUG"
+	// SysInfoTbl sysinfo table
+	SysInfoTbl = "sysinfo"
+	// FileTbl file table
+	FileTbl = "files"
+)
 
 type sysInfo struct {
+	// LID 当前服务id
+	LID string `json:"lid" bson:"lid" yaml:"lid" mapstructure:"lid"`
 	// Region 当前域
-	Region string `json:"region" bson:"region"  yaml:"region" mapstructure:"region"`
+	Region string `json:"region" bson:"region" yaml:"region" mapstructure:"region"`
 	// UID 用户id固定头部
 	UID string `json:"uid" bson:"uid"  yaml:"uid" mapstructure:"uid"`
 	// UNUM 当前用户数
-	UNUM int `json:"unum" bson:"unum" yaml:"uid" mapstructure:"uid"`
+	UNUM int `json:"unum" bson:"unum" yaml:"unum" mapstructure:"unum"`
 	// DID 设备id固定头部
-	DID string `json:"did" bson:"did" yaml:"uid" mapstructure:"uid"`
-	// DNUM 当前设备数
-	DNUM int `json:"dnum" bson:"dnum" yaml:"uid" mapstructure:"uid"`
-	// LID 当前服务id
-	LID         string `json:"lid" bson:"lid" yaml:"lid" mapstructure:"lid"`
+	DID string `json:"did" bson:"did" yaml:"did" mapstructure:"did"`
+	// DNUM 当前设备数
+	DNUM int `json:"dnum" bson:"dnum" yaml:"dnum" mapstructure:"dnum"`
+	// MediaServer 媒体服务
 	MediaServer bool
 	// 媒体服务器接流地址
 	mediaServerRtpIP net.IP
@@ -42,13 +46,20 @@ type sysInfo struct {
 	mediaServerRtpPort int
 }
 
-func defaultInfo() sysInfo {
-	return config.GB28181
-}
-
 // ActiveDevices 记录当前活跃设备，请求播放时设备必须处于活跃状态
 type ActiveDevices struct {
 	sync.Map
+}
+
+var (
+	// 活跃设备记录
+	_activeDevices ActiveDevices
+	// 系统运行信息
+	_sysinfo sysInfo
+)
+
+func defaultInfo() sysInfo {
+	return config.GB28181
 }
 
 // Get Get
@@ -58,11 +69,6 @@ func (a *ActiveDevices) Get(key string) (NVRDevices, bool) {
 	}
 	return NVRDevices{}, false
 }
-
-var _activeDevices ActiveDevices
-
-// 系统运行信息
-var _sysinfo sysInfo
 
 func loadSYSInfo() {
 
@@ -74,11 +80,11 @@ func loadSYSInfo() {
 
 	// init sysinfo
 	_sysinfo = sysInfo{}
-	if err := dbClient.Get(sysTB, M{}, &_sysinfo); err != nil {
+	if err := dbClient.Get(SysInfoTbl, M{}, &_sysinfo); err != nil {
 		if err == mongo.ErrNoDocuments {
 			//  初始不存在
 			_sysinfo = defaultInfo()
-			if err = dbClient.Insert(sysTB, _sysinfo); err != nil {
+			if err = dbClient.Insert(SysInfoTbl, _sysinfo); err != nil {
 				logrus.Fatalf("1 init sysinfo err:%v", err)
 			}
 		} else {
@@ -86,6 +92,7 @@ func loadSYSInfo() {
 		}
 	}
 	uri, _ := sip.ParseSipURI(fmt.Sprintf("sip:%s@%s", _sysinfo.LID, _sysinfo.Region))
+	// uri, _ := sip.ParseSipURI(fmt.Sprintf("sip:%s@%s", _sysinfo.LID, config.UDP))
 	_serverDevices = NVRDevices{
 		DeviceID: _sysinfo.LID,
 		Region:   _sysinfo.Region,
@@ -130,7 +137,7 @@ func sipResponse(tx *sip.Transaction) (*sip.Response, error) {
 }
 
 func checkSign(uri, token string, data interface{}) (ok bool, msg string) {
-	if config.MOD == MODDEBUG {
+	if config.MOD == ModDebug {
 		return true, ""
 	}
 	key := []string{}

@@ -697,8 +697,7 @@ func isRequest(startLine string) bool {
 // ParseRequestLine the first line of a SIP request, e.g:
 //   INVITE bob@example.com SIP/2.0
 //   REGISTER jane@telco.com SIP/1.0
-func ParseRequestLine(requestLine string) (
-	method RequestMethod, recipient *URI, sipVersion string, err error) {
+func ParseRequestLine(requestLine string) (method RequestMethod, recipient *URI, sipVersion string, err error) {
 	parts := strings.Split(requestLine, " ")
 	if len(parts) != 3 {
 		err = fmt.Errorf("request line should have 2 spaces: '%s'", requestLine)
@@ -874,8 +873,7 @@ func ParseSipURI(uriStr string) (uri URI, err error) {
 	uri.FHeaders = headers
 	uriStr = uriStr[n:]
 	if len(uriStr) > 0 {
-		err = fmt.Errorf("internal error: parse of SIP uri ended early! '%s'",
-			uriStrCopy)
+		err = fmt.Errorf("internal error: parse of SIP uri ended early! '%s'", uriStrCopy)
 		return // Defensive return
 	}
 

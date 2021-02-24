@@ -9,12 +9,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var activeTX *transacionts
-
 type transacionts struct {
 	txs map[string]*Transaction
 	rwm *sync.RWMutex
 }
+
+var activeTX *transacionts
 
 func (txs *transacionts) newTX(key string, conn Connection) *Transaction {
 	tx := NewTransaction(key, conn)
@@ -111,8 +111,8 @@ func (tx *Transaction) receiveResponse(msg *Response) {
 	tx.active <- 1
 }
 
-// Respond Respond
-func (tx *Transaction) Respond(res *Response) error {
+// Response Response
+func (tx *Transaction) Response(res *Response) error {
 	logrus.Traceln("send response,to:", res.dest.String(), "txkey:", tx.key, "message: \n", res.String())
 	_, err := tx.conn.WriteTo([]byte(res.String()), res.dest)
 	return err

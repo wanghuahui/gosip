@@ -67,7 +67,7 @@ func apiNewUsers(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		_apiResponse(w, statusDBERR, err)
 		return
 	}
-	if err := dbClient.Update(sysTB, M{}, M{"$inc": M{"unum": 1}}); err != nil {
+	if err := dbClient.Update(SysInfoTbl, M{}, M{"$inc": M{"unum": 1}}); err != nil {
 		_apiResponse(w, statusDBERR, err)
 		return
 	}
@@ -163,7 +163,7 @@ func apiNewDevices(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		_apiResponse(w, statusDBERR, err)
 		return
 	}
-	if err := dbClient.Update(sysTB, M{}, M{"$inc": M{"dnum": 1}}); err != nil {
+	if err := dbClient.Update(SysInfoTbl, M{}, M{"$inc": M{"dnum": 1}}); err != nil {
 		_apiResponse(w, statusDBERR, err)
 		return
 	}
@@ -208,7 +208,7 @@ func apiPlay(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		e, _ := strconv.ParseInt(params.Get("end"), 10, 64)
 		d.E = time.Unix(e, 0)
 	} else {
-		// 直播的判断当前是否存在播放
+		// 判断当前通道是否存在直播
 		if succ, ok := _playList.devicesSucc.Load(deviceid); ok {
 			_apiResponse(w, statusSucc, succ)
 			return
@@ -470,7 +470,8 @@ func apiWebHooks(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 }
 
-func restfulAPI() {
+// RestfulAPI func
+func RestfulAPI() {
 	router := httprouter.New()
 	router.GET("/users", apiAuthCheck(apiNewUsers, config.Secret))                // 注册新用户设备
 	router.GET("/users/:id/update", apiAuthCheck(apiUpdateUsers, config.Secret))  // 更新用户设备

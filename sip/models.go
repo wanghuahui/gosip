@@ -129,8 +129,5 @@ const RFC3261BranchMagicCookie = "z9hG4bK"
 
 // GenerateBranch returns random unique branch ID.
 func GenerateBranch() string {
-	return strings.Join([]string{
-		RFC3261BranchMagicCookie,
-		utils.RandString(32),
-	}, "")
+	return strings.Join([]string{RFC3261BranchMagicCookie, utils.RandString(32)}, "")
 }

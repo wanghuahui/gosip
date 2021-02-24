@@ -34,6 +34,7 @@ type MediaServer struct {
 	HTTP    string `json:"http" yaml:"http" mapstructure:"http"`
 	WS      string `json:"ws" yaml:"ws" mapstructure:"ws"`
 	RTMP    string `json:"rtmp" yaml:"rtmp" mapstructure:"rtmp"`
+	RTSP    string `json:"rtsp" yaml:"rtsp" mapstructure:"rtsp"`
 	RTP     string `json:"rtp" yaml:"rtp" mapstructure:"rtp"`
 	Secret  string `json:"secret" yaml:"secret" mapstructure:"secret"`
 }
@@ -62,6 +63,7 @@ func loadConfig() {
 		logrus.Fatalln("init config unmarshal error:", err)
 	}
 	logrus.Infof("config :%+v", config)
+
 	level, _ := logrus.ParseLevel(config.LogLevel)
 	logrus.SetLevel(level)
 	InitDB(config.DB)

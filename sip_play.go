@@ -60,6 +60,7 @@ func sipPlay(data playParams) interface{} {
 		"ssrc":     data.SSRC,
 		"http":     fmt.Sprintf("%s/rtp/%s/hls.m3u8", config.Media.HTTP, data.SSRC),
 		"rtmp":     fmt.Sprintf("%s/rtp/%s", config.Media.RTMP, data.SSRC),
+		"rtsp":     fmt.Sprintf("%s/rtp/%s", config.Media.RTSP, data.SSRC),
 		"ws-flv":   fmt.Sprintf("%s/rtp/%s.flv", config.Media.WS, data.SSRC),
 	}
 	data.UserID = user.DeviceID
@@ -91,8 +92,8 @@ func sipPlayPush(data playParams, device DeviceItem, user NVRDevices) (playParam
 		dbClient.Insert(streamTB, DeviceStream{
 			T:          data.T,
 			SSRC:       ssrc2stream(data.SSRC),
-			DeviceID:   data.DeviceID,
-			UserID:     data.UserID,
+			DeviceID:   data.DeviceID,  // 通道ID
+			UserID:     data.UserID,    // 设备ID
 			StreamType: streamTypePush, //  pull 媒体服务器主动拉流，push 监控设备主动推流
 			Status:     -1,
 			Time:       time.Now().Format("2006-01-02 15:04:05"),
@@ -119,7 +120,7 @@ func sipPlayPush(data playParams, device DeviceItem, user NVRDevices) (playParam
 	// defining message
 	m := &sdp.Message{
 		Origin: sdp.Origin{
-			Username: _serverDevices.DeviceID, // 媒体服务器id
+			Username: _serverDevices.DeviceID, // SIP服务器id
 			Address:  _sysinfo.mediaServerRtpIP.String(),
 		},
 		Name: name,
@@ -144,16 +145,25 @@ func sipPlayPush(data playParams, device DeviceItem, user NVRDevices) (playParam
 	s = m.Append(s)
 	// appending session to byte buffer
 	b = s.AppendTo(b)
-	deviceURI, _ := sip.ParseURI(device.URIStr)
+	deviceURI, _ := sip.ParseURI(device.URIStr) // 通道地址
 	device.addr = &sip.Address{URI: deviceURI}
 	_serverDevices.addr.Params.Add("tag", sip.String{Str: utils.RandString(20)})
 	hb := sip.NewHeaderBuilder().SetTo(device.addr).SetFrom(_serverDevices.addr).AddVia(&sip.ViaHop{
 		Params: sip.NewParams().Add("branch", sip.String{Str: sip.GenerateBranch()}),
 	}).SetContentType(&sip.ContentTypeSDP).SetMethod(sip.INVITE).SetContact(_serverDevices.addr)
 	req := sip.NewRequest("", sip.INVITE, user.addr.URI, sip.DefaultSipVersion, hb.Build(), string(b))
+
+	fmt.Printf("invite send1 to: %+v, from: %+v, reci: %+v\n", device.addr, _serverDevices.addr, user.addr)
+	fmt.Printf("invite send2: %s\n", string(b))
+	fmt.Println("invite send2 finished")
+
 	req.SetDestination(user.source)
 	req.AppendHeader(&sip.GenericHeader{HeaderName: "Subject", Contents: fmt.Sprintf("%s:%s,%s:%s", device.DeviceID, data.SSRC, _serverDevices.DeviceID, data.SSRC)})
 	req.SetRecipient(device.addr.URI)
+	fmt.Printf("invite dest: %+v, reci: %+v\n", user.source, device.addr)
+	fmt.Printf("invite send3: %s\n", req.String())
+	fmt.Println("invite send3 finished")
+
 	tx, err := srv.Request(req)
 	if err != nil {
 		logrus.Warningln("sipPlayPush fail.id:", device.DeviceID, "err:", err)
@@ -166,6 +176,9 @@ func sipPlayPush(data playParams, device DeviceItem, user NVRDevices) (playParam
 		return data, err
 	}
 	data.Resp = response
+	fmt.Printf("invite send4: %s\n", response.String())
+	fmt.Println("invite send4 finished")
+
 	// ACK
 	tx.Request(sip.NewRequestFromResponse(sip.ACK, response))
 	data.SSRC = ssrc2stream(data.SSRC)

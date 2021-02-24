@@ -19,24 +19,23 @@ type RequestHandler func(req *Request, tx *Transaction)
 
 // Server Server
 type Server struct {
-	udpaddr net.Addr
-	conn    Connection
-
-	txs *transacionts
-
+	udpaddr         net.Addr
+	conn            Connection
+	txs             *transacionts
 	hmu             *sync.RWMutex
 	requestHandlers map[RequestMethod]RequestHandler
-
-	port *Port
-	host net.IP
+	port            *Port
+	host            net.IP
 }
 
 // NewServer NewServer
 func NewServer() *Server {
 	activeTX = &transacionts{txs: map[string]*Transaction{}, rwm: &sync.RWMutex{}}
-	srv := &Server{hmu: &sync.RWMutex{},
+	srv := &Server{
+		hmu:             &sync.RWMutex{},
 		txs:             activeTX,
-		requestHandlers: map[RequestMethod]RequestHandler{}}
+		requestHandlers: map[RequestMethod]RequestHandler{},
+	}
 	return srv
 }
 
@@ -60,6 +59,7 @@ func (s *Server) ListenUDPServer(addr string) {
 	if err != nil {
 		logrus.Fatal("net.ResolveUDPAddr err", err, addr)
 	}
+	s.udpaddr = udpaddr
 	s.port = NewPort(udpaddr.Port)
 	s.host, err = utils.ResolveSelfIP()
 	if err != nil {
@@ -80,6 +80,10 @@ func (s *Server) ListenUDPServer(addr string) {
 	go s.handlerListen(parser.out)
 	for {
 		num, raddr, err = s.conn.ReadFrom(buf)
+		// fmt.Println("11111111111111111111111111111111111111111111111111111")
+		// fmt.Println(num)
+		// fmt.Println(string(buf[:num]))
+		// fmt.Println("22222222222222222222222222222222222222222222222222222")
 		if err != nil {
 			logrus.Errorln("udp.ReadFromUDP err", err)
 			continue
@@ -94,6 +98,7 @@ func (s *Server) RegistHandler(method RequestMethod, handler RequestHandler) {
 	s.requestHandlers[method] = handler
 	s.hmu.Unlock()
 }
+
 func (s *Server) handlerListen(msgs chan Message) {
 	var msg Message
 	for {
@@ -110,6 +115,7 @@ func (s *Server) handlerListen(msgs chan Message) {
 		}
 	}
 }
+
 func (s *Server) handlerRequest(msg *Request) {
 	tx := s.mustTX(getTXKey(msg))
 	logrus.Traceln("receive request from:", msg.Source(), ",method:", msg.Method(), "txKey:", tx.key, "message: \n", msg.String())
@@ -126,12 +132,13 @@ func (s *Server) handlerRequest(msg *Request) {
 }
 
 func (s *Server) handlerResponse(msg *Response) {
+	// fmt.Println("response: ", msg)
 	tx := s.getTX(getTXKey(msg))
-	logrus.Traceln("receive response from:", msg.Source(), "txKey:", tx.key, "message: \n", msg.String())
-	if tx == nil {
-		logrus.Infoln("not found tx. receive response from:", msg.Source(), "message: \n", msg.String())
-	} else {
+	if tx != nil {
 		tx.receiveResponse(msg)
+		logrus.Traceln("receive response from:", msg.Source(), "txKey:", tx.key, "message: \n", msg.String())
+	} else {
+		logrus.Infoln("not found tx. receive response from:", msg.Source(), "message: \n", msg.String())
 	}
 }
 
@@ -156,5 +163,5 @@ func (s *Server) Request(req *Request) (*Transaction, error) {
 
 func handlerMethodNotAllowed(req *Request, tx *Transaction) {
 	resp := NewResponseFromRequest("", req, http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed), "")
-	tx.Respond(resp)
+	tx.Response(resp)
 }

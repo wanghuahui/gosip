@@ -74,6 +74,7 @@ func RandString(n int) string {
 	if err != nil {
 		panic(err)
 	}
+
 	l := len(letterBytes)
 	// fill output
 	for pos := range output {

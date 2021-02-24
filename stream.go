@@ -12,7 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var streamTB = "streams"
+const streamTB = "streams"
 
 // DeviceStream DeviceStream
 type DeviceStream struct {
@@ -67,7 +67,7 @@ func checkStream() {
 		streams := []DeviceStream{}
 		dbClient.Find(streamTB, M{"status": 0}, skip, 100, "", false, &streams)
 		for _, stream := range streams {
-			logrus.Debugln("checkStreamStreamID", stream.SSRC, stream.DeviceID)
+			logrus.Debugln("checkStreamStreamID", stream.SSRC, stream.DeviceID) //DeviceID-通道ID
 			if p, ok := _playList.ssrcResponse.Load(stream.SSRC); ok {
 				playParams := p.(playParams)
 				if stream.DeviceID == playParams.DeviceID {
@@ -85,7 +85,7 @@ func checkStream() {
 				}
 			}
 			logrus.Debugln("checkStreamActiveUser", stream.SSRC, stream.UserID)
-			user, ok := _activeDevices.Get(stream.UserID)
+			user, ok := _activeDevices.Get(stream.UserID) // NVR设备ID
 			if !ok {
 				continue
 			}
@@ -100,6 +100,7 @@ func checkStream() {
 					URIStr:   fmt.Sprintf("sip:%s@%s", stream.DeviceID, _serverDevices.Region),
 				}
 			}
+			logrus.Debugf("run test, device: %+v", device)
 			deviceURI, _ := sip.ParseURI(device.URIStr)
 			device.addr = &sip.Address{URI: deviceURI}
 			for k, v := range stream.Ttag {
@@ -139,8 +140,8 @@ func checkStream() {
 					logrus.Infoln("checkStreamClosedFail1", stream.SSRC, response.StatusCode())
 					dbClient.Update(streamTB, M{"ssrc": stream.SSRC, "stop": false}, M{"$set": M{"err": response.Reason(), "status": 1}})
 				} else {
-					logrus.Warningln("checkStreamClosedFail1", stream.SSRC, response.StatusCode())
-					dbClient.Update(streamTB, M{"ssrc": stream.SSRC, "stop": false}, M{"$set": M{"err": response.Reason()}})
+					logrus.Warningln("checkStreamClosedFail2", stream.SSRC, response.StatusCode())
+					dbClient.Update(streamTB, M{"ssrc": stream.SSRC, "stop": false}, M{"$set": M{"err": response.Reason(), "status": 1}})
 				}
 				continue
 			}

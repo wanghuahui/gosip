@@ -48,10 +48,8 @@ type NVRDevices struct {
 	// Regist 是否注册
 	Regist bool `json:"regist" bson:"regist"`
 	// PWD 密码
-	PWD string `json:"pwd" bson:"pwd"`
-
+	PWD string  `json:"pwd" bson:"pwd"`
 	Sys sysInfo `json:"sysinfo" bson:"-"`
-
 	//----
 	addr   *sip.Address
 	source net.Addr
@@ -111,10 +109,14 @@ func parserDevicesFromReqeust(req *sip.Request) (NVRDevices, bool) {
 	report, ok := via.Params.Get("rport")
 	if ok && report != nil {
 		u.Rport = report.String()
+	} else {
+		u.Rport = u.Port
 	}
 	raddr, ok := via.Params.Get("received")
 	if ok && raddr != nil {
 		u.RAddr = raddr.String()
+	} else {
+		u.RAddr = u.Host
 	}
 
 	u.TransPort = via.Transport
