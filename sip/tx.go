@@ -121,7 +121,7 @@ func (tx *Transaction) Response(res *Response) error {
 // Request Request
 func (tx *Transaction) Request(req *Request) error {
 	logrus.Traceln("send request,to:", req.dest.String(), "txkey:", tx.key, "message: \n", req.String())
-	_, err := tx.conn.WriteTo([]byte(req.String()), req.dest)
+	_, err := tx.conn.WriteTo([]byte(req.String()), req.dest) // 发送到相机地址
 	return err
 }
 

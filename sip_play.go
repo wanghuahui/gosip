@@ -153,16 +153,16 @@ func sipPlayPush(data playParams, device DeviceItem, user NVRDevices) (playParam
 	}).SetContentType(&sip.ContentTypeSDP).SetMethod(sip.INVITE).SetContact(_serverDevices.addr)
 	req := sip.NewRequest("", sip.INVITE, user.addr.URI, sip.DefaultSipVersion, hb.Build(), string(b))
 
-	fmt.Printf("invite send1 to: %+v, from: %+v, reci: %+v\n", device.addr, _serverDevices.addr, user.addr)
-	fmt.Printf("invite send2: %s\n", string(b))
-	fmt.Println("invite send2 finished")
+	// fmt.Printf("invite send1 to: %+v, from: %+v, reci: %+v\n", device.addr, _serverDevices.addr, user.addr)
+	// fmt.Printf("invite send2: %s\n", string(b))
+	// fmt.Println("invite send2 finished")
 
 	req.SetDestination(user.source)
 	req.AppendHeader(&sip.GenericHeader{HeaderName: "Subject", Contents: fmt.Sprintf("%s:%s,%s:%s", device.DeviceID, data.SSRC, _serverDevices.DeviceID, data.SSRC)})
 	req.SetRecipient(device.addr.URI)
-	fmt.Printf("invite dest: %+v, reci: %+v\n", user.source, device.addr)
-	fmt.Printf("invite send3: %s\n", req.String())
-	fmt.Println("invite send3 finished")
+	// fmt.Printf("invite dest: %+v, reci: %+v\n", user.source, device.addr)
+	// fmt.Printf("invite send3: %s\n", req.String())
+	// fmt.Println("invite send3 finished")
 
 	tx, err := srv.Request(req)
 	if err != nil {
@@ -180,6 +180,7 @@ func sipPlayPush(data playParams, device DeviceItem, user NVRDevices) (playParam
 	fmt.Println("invite send4 finished")
 
 	// ACK
+	fmt.Printf("source: %s, dest: %s\n", response.Source().String(), response.Destination().String())
 	tx.Request(sip.NewRequestFromResponse(sip.ACK, response))
 	data.SSRC = ssrc2stream(data.SSRC)
 	data.streamType = streamTypePush

@@ -8,7 +8,6 @@ import (
 
 	"github.com/panjjo/gosip/sip"
 	"github.com/panjjo/gosip/utils"
-	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -61,13 +60,13 @@ func getSSRC(t int) string {
 // 1. 数据库查询当前status=0在推流状态的所有流信息
 // 2. 比对当前_playList中存在的流，如果不在_playlist或者ssrc与deviceid不匹配则关闭
 func checkStream() {
-	logrus.Debugln("checkStreamWithCron")
+	logger.Debug("check stream with cron")
 	var skip int64
 	for {
 		streams := []DeviceStream{}
 		dbClient.Find(streamTB, M{"status": 0}, skip, 100, "", false, &streams)
 		for _, stream := range streams {
-			logrus.Debugln("checkStreamStreamID", stream.SSRC, stream.DeviceID) //DeviceID-通道ID
+			logger.Debug("checkStreamStreamID", stream.SSRC, stream.DeviceID) //DeviceID-通道ID
 			if p, ok := _playList.ssrcResponse.Load(stream.SSRC); ok {
 				playParams := p.(playParams)
 				if stream.DeviceID == playParams.DeviceID {
@@ -84,23 +83,22 @@ func checkStream() {
 					}
 				}
 			}
-			logrus.Debugln("checkStreamActiveUser", stream.SSRC, stream.UserID)
+			logger.Debug("checkStreamActiveUser", stream.SSRC, stream.UserID)
 			user, ok := _activeDevices.Get(stream.UserID) // NVR设备ID
 			if !ok {
 				continue
 			}
-			logrus.Debugln("checkStreamClosed", stream.SSRC, stream.UserID)
+			logger.Debug("checkStreamClosed", stream.SSRC, stream.UserID)
 			// 关闭此流
 			device := DeviceItem{}
 			if err := dbClient.Get(deviceTB, M{"deviceid": stream.DeviceID}, &device); err != nil {
-				logrus.Errorln("checkStreamGetDeviceError", stream.SSRC, stream.DeviceID, err)
+				logger.Error("checkStreamGetDeviceError", stream.SSRC, stream.DeviceID, err)
 				dbClient.Update(streamTB, M{"ssrc": stream.SSRC, "stop": false}, M{"$set": M{"err": err.Error()}})
 				device = DeviceItem{
 					DeviceID: stream.DeviceID,
 					URIStr:   fmt.Sprintf("sip:%s@%s", stream.DeviceID, _serverDevices.Region),
 				}
 			}
-			logrus.Debugf("run test, device: %+v", device)
 			deviceURI, _ := sip.ParseURI(device.URIStr)
 			device.addr = &sip.Address{URI: deviceURI}
 			for k, v := range stream.Ttag {
@@ -126,21 +124,21 @@ func checkStream() {
 
 			tx, err := srv.Request(req)
 			if err != nil {
-				logrus.Warningln("checkStreamClosedFail", stream.SSRC, err)
+				logger.Warn("checkStreamClosedFail", stream.SSRC, err)
 				dbClient.Update(streamTB, M{"ssrc": stream.SSRC, "stop": false}, M{"$set": M{"err": err.Error()}})
 				continue
 			}
 			response := tx.GetResponse()
 			if response == nil {
-				logrus.Warningln("checkStreamClosedFail response is nil", device.DeviceID)
+				logger.Warn("checkStreamClosedFail response is nil", device.DeviceID)
 				continue
 			}
 			if response.StatusCode() != http.StatusOK {
 				if response.StatusCode() == http.StatusNotFound {
-					logrus.Infoln("checkStreamClosedFail1", stream.SSRC, response.StatusCode())
+					logger.Info("checkStreamClosedFail1", stream.SSRC, response.StatusCode())
 					dbClient.Update(streamTB, M{"ssrc": stream.SSRC, "stop": false}, M{"$set": M{"err": response.Reason(), "status": 1}})
 				} else {
-					logrus.Warningln("checkStreamClosedFail2", stream.SSRC, response.StatusCode())
+					logger.Warn("checkStreamClosedFail2", stream.SSRC, response.StatusCode())
 					dbClient.Update(streamTB, M{"ssrc": stream.SSRC, "stop": false}, M{"$set": M{"err": response.Reason(), "status": 1}})
 				}
 				continue

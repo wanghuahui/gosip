@@ -7,7 +7,6 @@ import (
 
 	"github.com/panjjo/gosip/sip"
 	"github.com/panjjo/gosip/utils"
-	"github.com/sirupsen/logrus"
 )
 
 const userTB = "users"     // 用户表 NVR表
@@ -86,22 +85,22 @@ func parserDevicesFromReqeust(req *sip.Request) (NVRDevices, bool) {
 	u := NVRDevices{}
 	header, ok := req.From()
 	if !ok {
-		logrus.Warningln("not found from header from request", req.String())
+		logger.Warn("not found from header from request", req.String())
 		return u, false
 	}
 	if header.Address == nil {
-		logrus.Warningln("not found from user from request", req.String())
+		logger.Warn("not found from user from request", req.String())
 		return u, false
 	}
 	if header.Address.User() == nil {
-		logrus.Warningln("not found from user from request", req.String())
+		logger.Warn("not found from user from request", req.String())
 		return u, false
 	}
 	u.DeviceID = header.Address.User().String()
 	u.Region = header.Address.Host()
 	via, ok := req.ViaHop()
 	if !ok {
-		logrus.Info("not found ViaHop from request", req.String())
+		logger.Info("not found ViaHop from request", req.String())
 		return u, false
 	}
 	u.Host = via.Host
@@ -132,15 +131,15 @@ func sipDeviceInfo(to NVRDevices) {
 		Params: sip.NewParams().Add("branch", sip.String{Str: sip.GenerateBranch()}),
 	}).SetContentType(&sip.ContentTypeXML).SetMethod(sip.MESSAGE)
 	req := sip.NewRequest("", sip.MESSAGE, to.addr.URI, sip.DefaultSipVersion, hb.Build(), sip.GetDeviceInfoXML(to.DeviceID))
-	req.SetDestination(to.source)
+	req.SetDestination(to.source) // 相机设备地址，IP:Port
 	tx, err := srv.Request(req)
 	if err != nil {
-		logrus.Warnln("sipDeviceInfo  error,", err)
+		logger.Warn("sipDeviceInfo  error,", err)
 		return
 	}
 	_, err = sipResponse(tx)
 	if err != nil {
-		logrus.Warnln("sipDeviceInfo  response error,", err)
+		logger.Warn("sipDeviceInfo  response error,", err)
 		return
 	}
 }
@@ -154,12 +153,12 @@ func sipCatalog(to NVRDevices) {
 	req.SetDestination(to.source)
 	tx, err := srv.Request(req)
 	if err != nil {
-		logrus.Warnln("sipCatalog  error,", err)
+		logger.Warn("sipCatalog  error,", err)
 		return
 	}
 	_, err = sipResponse(tx)
 	if err != nil {
-		logrus.Warnln("sipCatalog  response error,", err)
+		logger.Warn("sipCatalog  response error,", err)
 		return
 	}
 }
@@ -178,7 +177,7 @@ type MessageDeviceInfoResponse struct {
 func sipMessageDeviceInfo(u NVRDevices, body string) error {
 	message := &MessageDeviceInfoResponse{}
 	if err := utils.XMLDecode([]byte(body), message); err != nil {
-		logrus.Errorln("sipMessageDeviceInfo Unmarshal xml err:", err, "body:", body)
+		logger.Error("sipMessageDeviceInfo Unmarshal xml err:", err, "body:", body)
 		return err
 	}
 	update := M{
@@ -230,7 +229,7 @@ type DeviceItem struct {
 func sipMessageCatalog(u NVRDevices, body string) error {
 	message := &MessageDeviceListResponse{}
 	if err := utils.XMLDecode([]byte(body), message); err != nil {
-		logrus.Errorln("Message Unmarshal xml err:", err, "body:", body)
+		logger.Error("Message Unmarshal xml err:", err, "body:", body)
 		return err
 	}
 	if message.SumNum > 0 {
@@ -243,7 +242,7 @@ func sipMessageCatalog(u NVRDevices, body string) error {
 				d.Status = transDeviceStatus(d.Status)
 				dbClient.Update(deviceTB, M{"deviceid": d.DeviceID, "pdid": d.PDID}, M{"$set": d})
 			} else {
-				logrus.Infoln("deviceid not found,deviceid:", d.DeviceID, "pdid:", message.DeviceID)
+				logger.Info("deviceid not found,deviceid:", d.DeviceID, "pdid:", message.DeviceID)
 			}
 		}
 	}

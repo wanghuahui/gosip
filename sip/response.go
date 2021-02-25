@@ -16,21 +16,8 @@ type Response struct {
 }
 
 // NewResponseFromRequest NewResponseFromRequest
-func NewResponseFromRequest(
-	resID MessageID,
-	req *Request,
-	statusCode int,
-	reason string,
-	body string,
-) *Response {
-	res := NewResponse(
-		resID,
-		req.SipVersion(),
-		statusCode,
-		reason,
-		[]Header{},
-		"",
-	)
+func NewResponseFromRequest(resID MessageID, req *Request, statusCode int, reason string, body string) *Response {
+	res := NewResponse(resID, req.SipVersion(), statusCode, reason, []Header{}, "")
 
 	CopyHeaders("Record-Route", req, res)
 	CopyHeaders("Via", req, res)

@@ -5,7 +5,6 @@ import (
 	"net/url"
 
 	"github.com/panjjo/gosip/utils"
-	"github.com/sirupsen/logrus"
 )
 
 //
@@ -19,11 +18,11 @@ func zlmGetMediaInfo(ssrc string) rtpInfo {
 	res := rtpInfo{}
 	body, err := utils.GetRequest(config.Media.RESTFUL + "/index/api/getRtpInfo?secret=" + config.Media.Secret + "&stream_id=" + ssrc)
 	if err != nil {
-		logrus.Errorln("get stream rtpInfo fail,", err)
+		logger.Error("get stream rtpInfo fail,", err)
 		return res
 	}
 	if err = utils.JSONDecode(body, &res); err != nil {
-		logrus.Errorln("get stream rtpInfo fail,", err)
+		logger.Error("get stream rtpInfo fail,", err)
 		return res
 	}
 	return res

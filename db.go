@@ -10,8 +10,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // DBModel default key
@@ -79,14 +77,14 @@ func InitDB(config DBConfig) {
 
 	client, err := mongo.NewClient(ops)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 	err = client.Connect(context.TODO())
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 	mongoClient = client
-	log.Infoln("Init Mogo")
+	logger.Info("Init Mogo ok")
 }
 
 // NewClient NewClient
@@ -110,7 +108,7 @@ func (c *mgoClient) SetSession(session mongo.SessionContext) DBClient {
 func (c *mgoClient) Insert(tb string, obj interface{}) error {
 	now := time.Now()
 	defer func() {
-		log.Debugf("[MgoInsert][%v][%s]\n", time.Since(now), tb)
+		logger.Debugf("[MgoInsert][%v][%s]", time.Since(now), tb)
 	}()
 	cl := c.client.Database(c.db).Collection(tb)
 	_, err := cl.InsertOne(c.ctx, obj)
@@ -127,7 +125,7 @@ func (c *mgoClient) Update(tb string, query, update interface{}) error {
 func (c *mgoClient) UpdateResult(tb string, query, update interface{}) (int64, int64, error) {
 	now := time.Now()
 	defer func() {
-		log.Debugf("[MgoUpdateResult][%v][%s]\n", time.Since(now), tb)
+		logger.Debugf("[MgoUpdateResult][%v][%s]", time.Since(now), tb)
 	}()
 	cl := c.client.Database(c.db).Collection(tb)
 	r, err := cl.UpdateOne(c.ctx, query, update)
@@ -141,7 +139,7 @@ func (c *mgoClient) UpdateResult(tb string, query, update interface{}) (int64, i
 func (c *mgoClient) Upsert(tb string, query, update interface{}) (bool, error) {
 	now := time.Now()
 	defer func() {
-		log.Debugf("[MgoUpsert][%v][%s]\n", time.Since(now), tb)
+		logger.Debugf("[MgoUpsert][%v][%s]", time.Since(now), tb)
 	}()
 	cl := c.client.Database(c.db).Collection(tb)
 	upsert := true
@@ -158,7 +156,7 @@ func (c *mgoClient) Upsert(tb string, query, update interface{}) (bool, error) {
 func (c *mgoClient) UpdateMany(tb string, query, update interface{}) (int64, int64, error) {
 	now := time.Now()
 	defer func() {
-		log.Debugf("[MgoUpdateMany][%v][%s]\n", time.Since(now), tb)
+		logger.Debugf("[MgoUpdateMany][%v][%s]", time.Since(now), tb)
 	}()
 	cl := c.client.Database(c.db).Collection(tb)
 	r, err := cl.UpdateMany(c.ctx, query, update)
@@ -172,7 +170,7 @@ func (c *mgoClient) UpdateMany(tb string, query, update interface{}) (int64, int
 func (c *mgoClient) Get(tb string, query, obj interface{}) error {
 	now := time.Now()
 	defer func() {
-		log.Debugf("[MgoGet][%v][%s]\n", time.Since(now), tb)
+		logger.Debugf("[MgoGet][%v][%s]", time.Since(now), tb)
 	}()
 	cl := c.client.Database(c.db).Collection(tb)
 	return cl.FindOne(c.ctx, query).Decode(obj)
@@ -182,7 +180,7 @@ func (c *mgoClient) Get(tb string, query, obj interface{}) error {
 func (c *mgoClient) Count(tb string, query interface{}) (int64, error) {
 	now := time.Now()
 	defer func() {
-		log.Debugf("[MgoCount][%v][%s]\n", time.Since(now), tb)
+		logger.Debugf("[MgoCount][%v][%s]", time.Since(now), tb)
 	}()
 	return c.client.Database(c.db).Collection(tb).CountDocuments(c.ctx, query)
 }
@@ -191,7 +189,7 @@ func (c *mgoClient) Count(tb string, query interface{}) (int64, error) {
 func (c *mgoClient) Find(tb string, query interface{}, skip, limit int64, sort string, total bool, obj interface{}) (int64, error) {
 	now := time.Now()
 	defer func() {
-		log.Debugf("[MgoFind][%v][%s][%d:%d][%s]\n", time.Since(now), tb, skip, limit, sort)
+		logger.Debugf("[MgoFind][%v][%s][%d:%d][%s]", time.Since(now), tb, skip, limit, sort)
 	}()
 	t := int64(0)
 	rV := reflect.ValueOf(obj)
@@ -249,20 +247,20 @@ func (c *mgoClient) Find(tb string, query interface{}, skip, limit int64, sort s
 			elemp := reflect.New(elemt)
 			err := cur.Decode(elemp.Interface())
 			if err != nil {
-				log.Fatal(err)
+				logger.Fatal(err)
 			}
 			slicev = reflect.Append(slicev, elemp.Elem())
 			slicev = slicev.Slice(0, slicev.Cap())
 		} else {
 			err := cur.Decode(slicev.Index(i).Addr().Interface())
 			if err != nil {
-				log.Fatal(err)
+				logger.Fatal(err)
 			}
 		}
 		i++
 	}
 	if err := cur.Err(); err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 	rV.Elem().Set(slicev.Slice(0, i))
 	return t, nil
@@ -271,12 +269,12 @@ func (c *mgoClient) Find(tb string, query interface{}, skip, limit int64, sort s
 
 // Del Del
 func (c *mgoClient) Del(tb string, query interface{}) error {
-	log.Debugf("[MgoDel][%s]\n", tb)
+	logger.Debugf("[MgoDel][%s]", tb)
 	return c.Update(tb, query, M{"$set": M{"deltime": time.Now().Unix()}})
 }
 
 // DelMany DelMany
 func (c *mgoClient) DelMany(tb string, query interface{}) (int64, int64, error) {
-	log.Debugf("[MgoDel][%s][%s]\n", tb)
+	logger.Debugf("[MgoDel][%s][%s]", tb)
 	return c.UpdateMany(tb, query, M{"$set": M{"deltime": time.Now().Unix()}})
 }

@@ -12,7 +12,6 @@ import (
 
 	"github.com/panjjo/gosip/sip"
 	"github.com/panjjo/gosip/utils"
-	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -85,10 +84,10 @@ func loadSYSInfo() {
 			//  初始不存在
 			_sysinfo = defaultInfo()
 			if err = dbClient.Insert(SysInfoTbl, _sysinfo); err != nil {
-				logrus.Fatalf("1 init sysinfo err:%v", err)
+				logger.Fatalf("1 init sysinfo err:%v", err)
 			}
 		} else {
-			logrus.Fatalf("2 init sysinfo err:%v", err)
+			logger.Fatalf("2 init sysinfo err:%v", err)
 		}
 	}
 	uri, _ := sip.ParseSipURI(fmt.Sprintf("sip:%s@%s", _sysinfo.LID, _sysinfo.Region))
@@ -106,11 +105,11 @@ func loadSYSInfo() {
 	// init media
 	url, err := url.Parse(config.Media.RTP)
 	if err != nil {
-		logrus.Fatalf("media rtp url error,url:%s,err:%v", config.Media.RTP, err)
+		logger.Fatalf("media rtp url error,url:%s,err:%v", config.Media.RTP, err)
 	}
 	ipaddr, err := net.ResolveIPAddr("ip", url.Hostname())
 	if err != nil {
-		logrus.Fatalf("media rtp url error,url:%s,err:%v", config.Media.RTP, err)
+		logger.Fatalf("media rtp url error,url:%s,err:%v", config.Media.RTP, err)
 	}
 	_sysinfo.mediaServerRtpIP = ipaddr.IP
 	_sysinfo.mediaServerRtpPort, _ = strconv.Atoi(url.Port())

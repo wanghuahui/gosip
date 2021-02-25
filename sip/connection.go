@@ -16,7 +16,7 @@ import (
 // Packet Packet
 type Packet struct {
 	reader     *bufio.Reader
-	raddr      net.Addr
+	raddr      net.Addr // 远程设备地址，即相机IP:Port
 	bodylength int
 }
 

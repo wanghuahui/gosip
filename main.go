@@ -14,9 +14,6 @@ var (
 )
 
 func main() {
-	// go func() {
-	// 	http.ListenAndServe("0.0.0.0:6060", nil)
-	// }()
 
 	srv = sip.NewServer()
 	srv.RegistHandler(sip.REGISTER, handlerRegister)
@@ -26,13 +23,15 @@ func main() {
 }
 
 func init() {
+	logger = newLogger()
 	loadConfig()
 	dbClient = NewClient().SetDB(config.DB.DBName)
 	loadSYSInfo()
-	_cron()
+	streamCron()
 }
 
-func _cron() {
+// streamCron 定时任务，检查并关闭无效视频流
+func streamCron() {
 	c := cron.New()                         // 新建一个定时任务对象
 	c.AddFunc("0 */5 * * * *", checkStream) // 定时关闭推送流,每5分钟执行一次
 	c.Start()

@@ -3,7 +3,7 @@ package main
 import (
 	"strings"
 
-	"github.com/sirupsen/logrus"
+	"github.com/labstack/gommon/log"
 	"github.com/spf13/viper"
 )
 
@@ -41,6 +41,25 @@ type MediaServer struct {
 
 var config *Config
 
+// parseLevel 解析日志打印等级
+func parseLevel(level string) (l log.Lvl) {
+	switch level {
+	case "debug":
+		l = log.DEBUG
+	case "info":
+		l = log.INFO
+	case "warn":
+		l = log.WARN
+	case "error":
+		l = log.ERROR
+	case "off":
+		l = log.OFF
+	default:
+		l = log.INFO
+	}
+	return
+}
+
 func loadConfig() {
 	viper.SetConfigType("yml")
 	viper.SetConfigName("config")
@@ -54,18 +73,20 @@ func loadConfig() {
 	viper.AutomaticEnv()
 	err := viper.ReadInConfig()
 	if err != nil {
-		logrus.Fatalln("init config error:", err)
+		logger.Fatal("init config error:", err)
 	}
-	logrus.Infoln("init config ok")
+	logger.Info("read config ok")
+
 	config = &Config{}
 	err = viper.Unmarshal(&config)
 	if err != nil {
-		logrus.Fatalln("init config unmarshal error:", err)
+		logger.Fatal("init config unmarshal error:", err)
 	}
-	logrus.Infof("config :%+v", config)
+	logger.Infof("config :%+v", config)
 
-	level, _ := logrus.ParseLevel(config.LogLevel)
-	logrus.SetLevel(level)
+	// level, _ := logger.ParseLevel(config.LogLevel)
+	// logger.SetLevel(level)
+	logger.SetLevel(parseLevel(config.LogLevel))
 	InitDB(config.DB)
 	config.MOD = strings.ToUpper(config.MOD)
 }

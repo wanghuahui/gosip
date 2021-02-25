@@ -9,7 +9,6 @@ import (
 
 	"github.com/panjjo/gosip/sip"
 	"github.com/panjjo/gosip/utils"
-	"github.com/sirupsen/logrus"
 )
 
 // 获取录像文件列表
@@ -69,7 +68,7 @@ var _recordList *sync.Map
 func sipMessageRecordInfo(u NVRDevices, body string) error {
 	message := &MessageRecordInfoResponse{}
 	if err := utils.XMLDecode([]byte(body), message); err != nil {
-		logrus.Errorln("Message Unmarshal xml err:", err, "body:", body)
+		logger.Error("Message Unmarshal xml err:", err, "body:", body)
 		return err
 	}
 	if list, ok := _recordList.Load(message.DeviceID); ok {

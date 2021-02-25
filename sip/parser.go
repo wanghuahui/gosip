@@ -597,6 +597,7 @@ func (p *parser) start() {
 				termErr = utils.NewError(err, "parserMessage", "ParseStatusLine", startLine)
 			}
 		}
+		// fmt.Printf("info2: %+v\n", msg.String())
 		if termErr != nil {
 			logrus.Errorln(err)
 			continue
