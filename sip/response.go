@@ -41,14 +41,7 @@ func NewResponseFromRequest(resID MessageID, req *Request, statusCode int, reaso
 }
 
 // NewResponse NewResponse
-func NewResponse(
-	messID MessageID,
-	sipVersion string,
-	statusCode int,
-	reason string,
-	hdrs []Header,
-	body string,
-) *Response {
+func NewResponse(messID MessageID, sipVersion string, statusCode int, reason string, hdrs []Header, body string) *Response {
 	res := new(Response)
 	if messID == "" {
 		res.messID = MessageID(uuid.Must(uuid.NewV4()).String())

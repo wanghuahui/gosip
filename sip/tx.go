@@ -113,8 +113,9 @@ func (tx *Transaction) receiveResponse(msg *Response) {
 
 // Response Response
 func (tx *Transaction) Response(res *Response) error {
-	logrus.Traceln("send response,to:", res.dest.String(), "txkey:", tx.key, "message: \n", res.String())
+	// fmt.Println("send response,to:", res.dest.String(), "txkey:", tx.key, "message: \n", res.String())
 	_, err := tx.conn.WriteTo([]byte(res.String()), res.dest)
+	// fmt.Printf("resp num: %d, err: %+v\n", num, err)
 	return err
 }
 

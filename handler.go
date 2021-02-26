@@ -6,7 +6,6 @@ import (
 
 	"github.com/panjjo/gosip/sip"
 	"github.com/panjjo/gosip/utils"
-	"github.com/sirupsen/logrus"
 )
 
 // MessageReceive 接收到的请求数据最外层，主要用来判断数据类型
@@ -32,7 +31,7 @@ func handlerMessage(req *sip.Request, tx *sip.Transaction) {
 	message := &MessageReceive{}
 
 	if err := utils.XMLDecode([]byte(body), message); err != nil {
-		logrus.Errorln("Message Unmarshal xml err:", err, "body:", body)
+		logger.Error("Message Unmarshal xml err:", err, "body:", body)
 		tx.Response(sip.NewResponseFromRequest("", req, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), ""))
 		return
 	}
@@ -65,8 +64,10 @@ func handlerMessage(req *sip.Request, tx *sip.Transaction) {
 
 func handlerRegister(req *sip.Request, tx *sip.Transaction) {
 	// 判断是否存在授权字段
+	// fmt.Printf("register req: %+v\n", req.String())
 	if hdrs := req.GetHeaders("Authorization"); len(hdrs) > 0 {
 		fromUser, ok := parserDevicesFromReqeust(req)
+		// fmt.Printf("device info: %+v\n", fromUser)
 		if !ok {
 			return
 		}
@@ -92,7 +93,7 @@ func handlerRegister(req *sip.Request, tx *sip.Transaction) {
 					// 第一次激活，保存数据库
 					user.Regist = true
 					dbClient.Update(userTB, M{"deviceid": user.DeviceID}, M{"$set": user})
-					logrus.Infoln("new user regist,id:", user.DeviceID)
+					logger.Info("new user regist,id:", user.DeviceID)
 				}
 				tx.Response(sip.NewResponseFromRequest("", req, http.StatusOK, "", ""))
 				// 注册成功后查询设备信息，获取制作厂商等信息
@@ -105,6 +106,7 @@ func handlerRegister(req *sip.Request, tx *sip.Transaction) {
 	}
 	resp := sip.NewResponseFromRequest("", req, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized), "")
 	resp.AppendHeader(&sip.GenericHeader{HeaderName: "WWW-Authenticate", Contents: fmt.Sprintf("Digest Nonce=\"%s\" Realm=\"%s\"", req.MessageID(), req.MessageID())})
+	// resp.AppendHeader(&sip.GenericHeader{HeaderName: "WWW-Authenticate", Contents: fmt.Sprintf("Digest nonce=\"%s\" realm=\"%s\" opaque=\"\" stale=\"FALSE\" algorithm=\"MD5\"", req.MessageID(), _sysinfo.Region)})
 	tx.Response(resp)
-
+	fmt.Printf("register res: %+vaddr: %s\n", resp.String(), resp.Destination().String())
 }

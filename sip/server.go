@@ -156,6 +156,14 @@ func (s *Server) Request(req *Request) (*Transaction, error) {
 	if !viaHop.Params.Has("rport") {
 		viaHop.Params.Add("rport", nil)
 	}
+	// test
+	// if !viaHop.Params.Has("rport") {
+	// 	viaHop.Params.Add("rport", String{Str: strconv.Itoa(int(*viaHop.Port))})
+	// }
+	// if !viaHop.Params.Has("received") {
+	// 	viaHop.Params.Add("received", String{Str: viaHop.Host})
+	// }
+	//
 
 	tx := s.mustTX(getTXKey(req))
 	return tx, tx.Request(req)

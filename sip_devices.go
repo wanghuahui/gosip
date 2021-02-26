@@ -108,14 +108,14 @@ func parserDevicesFromReqeust(req *sip.Request) (NVRDevices, bool) {
 	report, ok := via.Params.Get("rport")
 	if ok && report != nil {
 		u.Rport = report.String()
-	} else {
-		u.Rport = u.Port
+		// } else {
+		// 	u.Rport = u.Port
 	}
 	raddr, ok := via.Params.Get("received")
 	if ok && raddr != nil {
 		u.RAddr = raddr.String()
-	} else {
-		u.RAddr = u.Host
+		// } else {
+		// 	u.RAddr = u.Host
 	}
 
 	u.TransPort = via.Transport

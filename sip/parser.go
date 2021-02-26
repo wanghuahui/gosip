@@ -579,8 +579,9 @@ func (p *parser) start() {
 	for !p.isStop {
 		packet = <-p.in
 		startLine, err := packet.nextLine()
-		if err != nil {
+		if err != nil || len(startLine) == 0 {
 			logrus.Errorln(err, "parserMessage", "getStartLine", startLine)
+			continue
 		}
 		if isRequest(startLine) {
 			method, recipient, sipVersion, err := ParseRequestLine(startLine)
@@ -596,8 +597,9 @@ func (p *parser) start() {
 			} else {
 				termErr = utils.NewError(err, "parserMessage", "ParseStatusLine", startLine)
 			}
+		} else {
+			termErr = utils.NewError(err, "parserMessage", "neither request nor response", startLine)
 		}
-		// fmt.Printf("info2: %+v\n", msg.String())
 		if termErr != nil {
 			logrus.Errorln(err)
 			continue
