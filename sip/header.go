@@ -35,7 +35,7 @@ type HeadersBuilder struct {
 func NewHeaderBuilder() *HeadersBuilder {
 	callID := CallID(utils.RandString(32))
 	maxForwards := MaxForwards(70)
-	userAgent := UserAgentHeader("GoSIP")
+	// userAgent := UserAgentHeader("GoSIP")
 	return &HeadersBuilder{
 		protocol:        "SIP",
 		protocolVersion: "2.0",
@@ -44,11 +44,11 @@ func NewHeaderBuilder() *HeadersBuilder {
 		cseq:            &CSeq{SeqNo: 1},
 		callID:          &callID,
 		via:             make(ViaHeader, 0),
-		userAgent:       &userAgent,
-		maxForwards:     &maxForwards,
-		generic:         make(map[string]Header),
-		allow:           defaultAllowMethods,
-		supported:       &SupportedHeader{Options: []string{}},
+		// userAgent:       &userAgent,
+		maxForwards: &maxForwards,
+		generic:     make(map[string]Header),
+		// allow:           defaultAllowMethods,
+		// supported:       &SupportedHeader{Options: []string{}},
 	}
 }
 
@@ -766,6 +766,20 @@ func (hop *ViaHop) String() string {
 	if hop.Params.Length() > 0 {
 		buffer.WriteString(";")
 		buffer.WriteString(hop.Params.ToString(';'))
+		//test
+		// s := hop.Params.ToString(';')
+		// parts := strings.Split(s, ";")
+		// for idx := range parts {
+		// 	if strings.Contains(parts[idx], "rport") {
+		// 		parts[idx] = fmt.Sprintf("rport=%d", *hop.Port)
+		// 		break
+		// 	}
+		// }
+		// if !strings.Contains(s, "received") {
+		// 	parts = append(parts, fmt.Sprintf("received=%s", hop.Host))
+		// }
+		// buffer.WriteString(strings.Join(parts, ";"))
+		//
 	}
 
 	return buffer.String()

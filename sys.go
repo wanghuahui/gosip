@@ -91,7 +91,7 @@ func loadSYSInfo() {
 		}
 	}
 	uri, _ := sip.ParseSipURI(fmt.Sprintf("sip:%s@%s", _sysinfo.LID, _sysinfo.Region))
-	// uri, _ := sip.ParseSipURI(fmt.Sprintf("sip:%s@%s", _sysinfo.LID, config.UDP))
+	// uri, _ := sip.ParseSipURI(fmt.Sprintf("sip:%s@10.100.44.135:5060", _sysinfo.LID))
 	_serverDevices = NVRDevices{
 		DeviceID: _sysinfo.LID,
 		Region:   _sysinfo.Region,
@@ -127,10 +127,10 @@ func ssrc2stream(ssrc string) string {
 func sipResponse(tx *sip.Transaction) (*sip.Response, error) {
 	response := tx.GetResponse()
 	if response == nil {
-		return nil, utils.NewError(nil, "response timeout", "tx key:", tx.Key())
+		return nil, utils.NewError(nil, "response timeout", ", tx key:", tx.Key())
 	}
 	if response.StatusCode() != http.StatusOK {
-		return response, utils.NewError(nil, "response fail", response.StatusCode(), response.Reason(), "tx key:", tx.Key())
+		return response, utils.NewError(nil, "response fail ", response.StatusCode(), response.Reason(), " tx key:", tx.Key())
 	}
 	return response, nil
 }

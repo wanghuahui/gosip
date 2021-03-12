@@ -9,16 +9,16 @@ import (
 
 // Config Config
 type Config struct {
-	MOD      string      `json:"mod" yaml:"mod" mapstructure:"mod"`
-	DB       DBConfig    `json:"database" yaml:"database" mapstructure:"database"`
-	LogLevel string      `json:"logger" yaml:"logger" mapstructure:"logger"`
-	UDP      string      `json:"udp" yaml:"udp" mapstructure:"udp"`
-	API      string      `json:"api" yaml:"api" mapstructure:"api"`
-	Secret   string      `json:"secret" yaml:"secret" mapstructure:"secret"`
-	Media    MediaServer `json:"media" yaml:"media" mapstructure:"media"`
-	Stream   Stream      `json:"stream" yaml:"stream" mapstructure:"stream"`
-	MP4Path  string      `json:"mp4path" yaml:"mp4path" mapstructure:"mp4path"`
-	GB28181  sysInfo     `json:"gb28181" yaml:"gb28181" mapstructure:"gb28181"`
+	MOD      string        `json:"mod" yaml:"mod" mapstructure:"mod"`
+	DB       DBConfig      `json:"database" yaml:"database" mapstructure:"database"`
+	LogLevel string        `json:"logger" yaml:"logger" mapstructure:"logger"`
+	UDP      string        `json:"udp" yaml:"udp" mapstructure:"udp"`
+	API      string        `json:"api" yaml:"api" mapstructure:"api"`
+	Secret   string        `json:"secret" yaml:"secret" mapstructure:"secret"`
+	Media    []MediaServer `json:"media" yaml:"media" mapstructure:"media"`
+	Stream   Stream        `json:"stream" yaml:"stream" mapstructure:"stream"`
+	MP4Path  string        `json:"mp4path" yaml:"mp4path" mapstructure:"mp4path"`
+	GB28181  sysInfo       `json:"gb28181" yaml:"gb28181" mapstructure:"gb28181"`
 }
 
 // Stream Stream

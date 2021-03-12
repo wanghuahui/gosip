@@ -15,6 +15,7 @@ type MessageReceive struct {
 }
 
 func handlerMessage(req *sip.Request, tx *sip.Transaction) {
+	fmt.Printf("message req:\n%+v\n", req.String())
 	u, ok := parserDevicesFromReqeust(req)
 	if !ok {
 		// 未解析出来源用户返回错误
@@ -64,10 +65,9 @@ func handlerMessage(req *sip.Request, tx *sip.Transaction) {
 
 func handlerRegister(req *sip.Request, tx *sip.Transaction) {
 	// 判断是否存在授权字段
-	// fmt.Printf("register req: %+v\n", req.String())
+	fmt.Printf("register req: %+v\n", req.String())
 	if hdrs := req.GetHeaders("Authorization"); len(hdrs) > 0 {
 		fromUser, ok := parserDevicesFromReqeust(req)
-		// fmt.Printf("device info: %+v\n", fromUser)
 		if !ok {
 			return
 		}
@@ -101,12 +101,15 @@ func handlerRegister(req *sip.Request, tx *sip.Transaction) {
 				return
 			}
 		} else {
-			fmt.Println(err.Error())
+			fmt.Println("db get user failed, err=" + err.Error())
+			return
 		}
 	}
 	resp := sip.NewResponseFromRequest("", req, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized), "")
-	resp.AppendHeader(&sip.GenericHeader{HeaderName: "WWW-Authenticate", Contents: fmt.Sprintf("Digest Nonce=\"%s\" Realm=\"%s\"", req.MessageID(), req.MessageID())})
-	// resp.AppendHeader(&sip.GenericHeader{HeaderName: "WWW-Authenticate", Contents: fmt.Sprintf("Digest nonce=\"%s\" realm=\"%s\" opaque=\"\" stale=\"FALSE\" algorithm=\"MD5\"", req.MessageID(), _sysinfo.Region)})
+	resp.AppendHeader(&sip.GenericHeader{HeaderName: "WWW-Authenticate", Contents: fmt.Sprintf("Digest Nonce=\"%s\",Realm=\"%s\"", req.MessageID(), req.MessageID())})
+	resp.AppendHeader(&sip.GenericHeader{HeaderName: "Content-Length", Contents: "0"})
+	// resp.AppendHeader(&sip.GenericHeader{HeaderName: "WWW-Authenticate", Contents: fmt.Sprintf("Digest nonce=\"%s\",realm=\"%s\",opaque=\"\",stale=\"FALSE\",algorithm=\"MD5\"", req.MessageID(), _sysinfo.Region)})
 	tx.Response(resp)
-	fmt.Printf("register res: %+vaddr: %s\n", resp.String(), resp.Destination().String())
+	// logger.Debugf("register from: %s, to: %s, network: %s\n", resp.Source().String(), resp.Destination().String(), resp.Destination().Network())
+	// fmt.Printf("register res:\n%+v\n", resp.String())
 }

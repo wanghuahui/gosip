@@ -216,8 +216,7 @@ func parseCallID(headerName string, headerText string) (
 // Note that although Via headers may contain a comma-separated list, RFC 3261 makes it clear that
 // these should not be treated as separate logical Via headers, but as multiple values on a single
 // Via header.
-func parseViaHeader(headerName string, headerText string) (
-	headers []Header, err error) {
+func parseViaHeader(headerName string, headerText string) (headers []Header, err error) {
 	sections := strings.Split(headerText, ",")
 	var via = ViaHeader{}
 	for _, section := range sections {
@@ -914,15 +913,7 @@ func ParseHostPort(rawText string) (host string, port *Port, err error) {
 // parser and omitted from the returned map.
 // If permitSingletons is true, keys with no values are permitted.
 // These will result in a nil value in the returned map.
-func ParseParams(
-	source string,
-	start uint8,
-	sep uint8,
-	end uint8,
-	quoteValues bool,
-	permitSingletons bool,
-) (
-	params Params, consumed int, err error) {
+func ParseParams(source string, start, sep, end uint8, quoteValues, permitSingletons bool) (params Params, consumed int, err error) {
 
 	params = NewParams()
 

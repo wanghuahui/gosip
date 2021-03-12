@@ -7,6 +7,7 @@ import (
 
 	"github.com/panjjo/gosip/sip"
 	"github.com/panjjo/gosip/utils"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 const userTB = "users"     // 用户表 NVR表
@@ -127,38 +128,45 @@ func parserDevicesFromReqeust(req *sip.Request) (NVRDevices, bool) {
 
 // 获取设备信息（注册设备）
 func sipDeviceInfo(to NVRDevices) {
-	hb := sip.NewHeaderBuilder().SetTo(to.addr).SetFrom(_serverDevices.addr).AddVia(&sip.ViaHop{
+	var fromaddr = _serverDevices.addr
+	fromaddr.Params.Add("tag", sip.String{Str: utils.RandString(20)})
+	hb := sip.NewHeaderBuilder().SetTo(to.addr).SetFrom(fromaddr).AddVia(&sip.ViaHop{
 		Params: sip.NewParams().Add("branch", sip.String{Str: sip.GenerateBranch()}),
 	}).SetContentType(&sip.ContentTypeXML).SetMethod(sip.MESSAGE)
 	req := sip.NewRequest("", sip.MESSAGE, to.addr.URI, sip.DefaultSipVersion, hb.Build(), sip.GetDeviceInfoXML(to.DeviceID))
 	req.SetDestination(to.source) // 相机设备地址，IP:Port
 	tx, err := srv.Request(req)
+	// fmt.Printf("sip device request: %+v\n", req.String())
 	if err != nil {
-		logger.Warn("sipDeviceInfo  error,", err)
+		logger.Warn("sipDeviceInfo error, ", err)
 		return
 	}
 	_, err = sipResponse(tx)
 	if err != nil {
-		logger.Warn("sipDeviceInfo  response error,", err)
+		logger.Warn("sipDeviceInfo response error, ", err)
 		return
 	}
 }
 
 // sipCatalog 获取注册设备包含的列表
 func sipCatalog(to NVRDevices) {
-	hb := sip.NewHeaderBuilder().SetTo(to.addr).SetFrom(_serverDevices.addr).AddVia(&sip.ViaHop{
+	var fromaddr = _serverDevices.addr
+	fromaddr.Params.Add("tag", sip.String{Str: utils.RandString(20)})
+
+	hb := sip.NewHeaderBuilder().SetTo(to.addr).SetFrom(fromaddr).AddVia(&sip.ViaHop{
 		Params: sip.NewParams().Add("branch", sip.String{Str: sip.GenerateBranch()}),
 	}).SetContentType(&sip.ContentTypeXML).SetMethod(sip.MESSAGE)
 	req := sip.NewRequest("", sip.MESSAGE, to.addr.URI, sip.DefaultSipVersion, hb.Build(), sip.GetCatalogXML(to.DeviceID))
 	req.SetDestination(to.source)
 	tx, err := srv.Request(req)
+	// fmt.Printf("sip catalog request: %+v\n", req.String())
 	if err != nil {
 		logger.Warn("sipCatalog  error,", err)
 		return
 	}
 	_, err = sipResponse(tx)
 	if err != nil {
-		logger.Warn("sipCatalog  response error,", err)
+		logger.Warn("sipCatalog response error,", err)
 		return
 	}
 }
@@ -234,15 +242,33 @@ func sipMessageCatalog(u NVRDevices, body string) error {
 	}
 	if message.SumNum > 0 {
 		device := &DeviceItem{}
+		var err error
 		for _, d := range message.Item {
-			if err := dbClient.Get(deviceTB, M{"deviceid": d.DeviceID, "pdid": message.DeviceID}, device); err == nil {
+			if err = dbClient.Get(deviceTB, M{"deviceid": d.DeviceID, "pdid": message.DeviceID}, device); err == nil {
 				d.PDID = message.DeviceID
 				d.Active = time.Now().Unix()
 				d.URIStr = fmt.Sprintf("sip:%s@%s", d.DeviceID, _sysinfo.Region)
 				d.Status = transDeviceStatus(d.Status)
 				dbClient.Update(deviceTB, M{"deviceid": d.DeviceID, "pdid": d.PDID}, M{"$set": d})
 			} else {
-				logger.Info("deviceid not found,deviceid:", d.DeviceID, "pdid:", message.DeviceID)
+				if err != mongo.ErrNoDocuments {
+					logger.Errorf("Get Device Info failed, deviceid:%s, pdid:%s, err:%s", d.DeviceID, message.DeviceID, err.Error())
+					return err
+				}
+
+				d.PDID = message.DeviceID
+				d.Active = time.Now().Unix()
+				d.URIStr = fmt.Sprintf("sip:%s@%s", d.DeviceID, _sysinfo.Region)
+				d.Status = transDeviceStatus(d.Status)
+				if err = dbClient.Insert(deviceTB, d); err != nil {
+					logger.Error("Insert Device Info failed, err: ", err.Error())
+					return err
+				}
+				if err = dbClient.Update(SysInfoTbl, M{}, M{"$inc": M{"dnum": 1}}); err != nil {
+					logger.Error("Update Sysinfo failed, err: ", err.Error())
+					return err
+				}
+				_sysinfo.DNUM++
 			}
 		}
 	}
